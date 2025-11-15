@@ -1,11 +1,7 @@
 <script lang="ts">
     import Navbar from "../components/Navbar.svelte";
     import WordDisplay from "../components/WordDisplay.svelte";
-    import {
-        get_favorite_words,
-        get_user_data_connection,
-        remove_words_from_favorites,
-    } from "../lib/db";
+    import { get_user_data_connection } from "../lib/db";
     import type { Word } from "../lib/types";
 
     let con = get_user_data_connection();

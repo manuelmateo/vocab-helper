@@ -3,7 +3,6 @@
     import axios from "axios";
     import type { Word } from "../lib/types";
     import WordDisplay from "./WordDisplay.svelte";
-    import { add_word_to_block_list, add_word_to_favorites } from "../lib/db";
 
     let random_word = $state("");
 

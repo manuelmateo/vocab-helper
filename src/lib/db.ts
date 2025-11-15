@@ -4,11 +4,12 @@ import words_dict from "../seven_letter_words.json";
 
 export const get_user_data_connection = () => {
   const current_data = localStorage.getItem("userdata");
+  console.log(current_data);
 
   const dummy_obj: UserData = { blocked_words: [], favorite_words: [] };
 
   const store = writable<UserData>(
-    current_data ? JSON.parse(current_data) : JSON.stringify(dummy_obj),
+    current_data ? JSON.parse(current_data) : dummy_obj,
   );
   store.subscribe((val) => (localStorage.userdata = JSON.stringify(val)));
   return store;
