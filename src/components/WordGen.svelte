@@ -4,8 +4,6 @@
     import type { Word } from "../lib/types";
     import WordDisplay from "./WordDisplay.svelte";
 
-    let random_word = $state("");
-
     const check_if_word_valid = async (word: string) => {
         if (word === "") {
             return false;
@@ -15,7 +13,11 @@
                 `https://www.dictionaryapi.com/api/v3/references/learners/json/${word}?key=70c4d258-f035-4fc4-bc86-78c8b92c2989`,
             )
             .then((r) => {
-                if (r.data.length > 1) {
+                console.log(r);
+                if (
+                    typeof r.data[0] === "string" ||
+                    r.data[0] instanceof String
+                ) {
                     return false;
                 }
                 return true;
@@ -32,9 +34,6 @@
                 `https://www.dictionaryapi.com/api/v3/references/learners/json/${word}?key=70c4d258-f035-4fc4-bc86-78c8b92c2989`,
             )
             .then((r) => {
-                console.log(r.data);
-                console.log(r.data[0].shortdef[0]);
-
                 return { word: word, definition: r.data[0].shortdef[0] };
             })
             .catch((e) => {
@@ -43,19 +42,16 @@
             });
     };
 
-    $effect(() => {
-        random_word = get_random_word();
-    });
+    const get_valid_word_data = async () => {
+        let curr_word = "";
+        do {
+            curr_word = get_random_word();
+        } while (!(await check_if_word_valid(curr_word)));
 
-    let is_valid_word = $derived.by(() => {
-        const word_valid = check_if_word_valid(random_word);
-        console.log(word_valid);
-        return word_valid;
-    });
+        return get_word_data(curr_word);
+    };
 
-    let word_data = $derived.by(() => {
-        return get_word_data(random_word);
-    });
+    let curr_word_data = $derived.by(get_valid_word_data);
 
     let con = get_user_data_connection();
 </script>
@@ -63,39 +59,39 @@
 <div class="container box">
     <h1 class="title">Word Generator</h1>
 
-    {#await is_valid_word}
-        <p>loading...</p>
-    {:then word_valid}
-        {#if word_valid}
-            {#await word_data}
-                <p>loading...</p>
-            {:then word_info}
-                <WordDisplay word_data={word_info}>
-                    {#if $con.favorite_words.find((w, i) => {
-                        return w.word === word_info.word;
-                    }) !== undefined}
-                        <button
-                            class="button is-danger is-outlined is-fullwidth"
-                            onclick={() => {
-                                $con.favorite_words =
-                                    $con.favorite_words.filter((i) => {
-                                        return i.word !== word_info.word;
-                                    });
-                            }}>Remove word from favorites</button
-                        >
-                    {:else}
-                        <button
-                            class="button is-link is-outlined is-fullwidth"
-                            onclick={() => {
-                                $con.favorite_words =
-                                    $con.favorite_words.concat(word_info);
-                            }}>Save to Favorites</button
-                        >
-                    {/if}
-                </WordDisplay>
-            {/await}
-        {:else}
-            <p>couldn't load word! refresh pls</p>
-        {/if}
+    {#await curr_word_data}
+        <!-- <p>loading...</p> -->
+        <WordDisplay word_data={{ word: "", definition: "" }}></WordDisplay>
+    {:then word_data}
+        <WordDisplay {word_data}>
+            {#if $con.favorite_words.find((w, i) => {
+                return w.word === word_data.word;
+            }) !== undefined}
+                <button
+                    class="button is-danger is-outlined is-fullwidth"
+                    onclick={() => {
+                        $con.favorite_words = $con.favorite_words.filter(
+                            (i) => {
+                                return i.word !== word_data.word;
+                            },
+                        );
+                    }}>Remove word from favorites</button
+                >
+            {:else}
+                <button
+                    class="button is-link is-outlined is-fullwidth"
+                    onclick={() => {
+                        $con.favorite_words =
+                            $con.favorite_words.concat(word_data);
+                    }}>Save to Favorites</button
+                >
+            {/if}
+        </WordDisplay>
+        <button
+            class="button is-outlined is-fullwidth is-warning"
+            onclick={() => {
+                curr_word_data = get_valid_word_data();
+            }}>Refresh word</button
+        >
     {/await}
 </div>
